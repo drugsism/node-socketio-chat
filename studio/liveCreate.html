@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, height=device-height, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Live Create</title>
+
+    {{ HTML::style('/assets/css/common.css?v=20190118') }}
+
+    <style>
+        html,
+        body {
+            height: 100%;
+        }
+
+        .chat_room_wrap {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+        }
+
+        .chat_room_wrap h1 {
+            display: block;
+            max-width: 140px;
+            margin: 0 auto;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .chat_room_wrap .box_pos {
+            position: absolute;
+            width: 100%;
+            max-width: 290px;
+            top: 50%;
+            left: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+        }
+
+        .chat_room_option {
+            margin: 30px auto;
+            font-size: 12px;
+        }
+
+        .chat_room_option .room_addr,
+        .chat_room_option .room_name {
+            display: block;
+            margin-bottom: 30px;
+        }
+
+        .chat_room_option .room_addr input,
+        .chat_room_option .room_name input {
+            width: 100%;
+            height: 44px;
+            padding: 0 5px;
+            border: 1px solid #ccc;
+            font-size: 12px;
+            text-align: center;
+            outline: none;
+            -webkit-box-shadow: none;
+            box-shadow: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        .chat_room_option .option {
+            display: inline-block;
+
+        }
+
+        .chat_room_option .option input {
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+        }
+
+        .chat_room_option .option label {
+            position: relative;
+            cursor: pointer;
+            padding-left: 6px;
+        }
+
+        .chat_room_option .option:last-of-type {
+            margin-left: 40px;
+        }
+
+        .chat_room_make {
+            padding: 10px 20px;
+            border-radius: 7px;
+            background: #000;
+            color: #fff;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat_room_wrap">
+        <div class="box_pos">
+            <h1 onClick="location.href=location.href;"><img src="/assets_new/img/modoo_logo.png" alt="모두의 트레이닝 채팅방 만들기">
+            </h1>
+            <input type="hidden" name="channel_value" id="channel_value" value="{{@$channelInfo['show_id']}}" />
+            <input type="hidden" name="channel_id" id="channel_id" value="{{@$channelInfo['id']}}" />
+            <div class="chat_room_option">
+                <span class="room_addr">
+                    <input type="text" placeholder="영상 주소를 입력해주세요." name="live_link" id="live_link"
+                        value="{{@$channelInfo['content_link']}}" />
+
+                </span>
+                <span class="room_name">
+                    <input type="text" placeholder="채팅방 이름을 설정해주세요." name="title" id="title"
+                        value="{{@$channelInfo['title']}}" />
+                </span>
+                <span class="option" style="display:none;">
+                    <input id="roomOpen" name="open_yn" value="Y" type="radio" checked @if(@$channelInfo['open_yn']=="Y"
+                        ) checked @endif />
+                    <label for="roomOpen">공개</label></span>
+                <span class="option" style="display:none;">
+                    <input id="roomPrivate" name="open_yn" value="N" type="radio" @if(@$channelInfo['open_yn']=="N" )
+                        checked @endif />
+                    <label for="roomPrivate">비공개</label></span>
+            </div>
+            @if($channelInfo['content_link'])
+            <button class="chat_room_make button" id="join-live">입장하기</button>
+            <button class="chat_room_make button" id="remove-live">기존 라이브 종료</button>
+            @else
+            <button class="chat_room_make button" id="create-live">방만들기</button>
+            @endif
+
+
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // storeLiveChannel
+        var data = {};
+
+        @if ($channelInfo['content_link'])
+            document.getElementById("join-live").addEventListener('click', joinLive, false);
+        document.getElementById("remove-live").addEventListener('click', removeLive, false);
+        @else
+        document.getElementById("create-live").addEventListener('click', storeLiveChannel, false);
+        @endif
+
+
+
+        function joinLive() {
+            location.href = "/modoo/user/modooLiveStudio/{{@$channelInfo['show_id']}}";
+        }
+
+        function storeLiveChannel() {
+            data = {
+                'channel_id': document.querySelector('#channel_id').value,
+                'channel_value': document.querySelector('#channel_value').value,
+                'live_link': document.querySelector('#live_link').value,
+                'open_yn': document.querySelector('input[name="open_yn"]:checked').value,
+                'title': document.querySelector('#title').value,
+            }
+            // console.log(data);
+            // return;
+            var request = new XMLHttpRequest();
+            request.open('POST', '/modoo/user/storeLiveChannel', true);
+            request.setRequestHeader('Content-Type', 'application/json');
+            request.send(JSON.stringify(data));
+            request.onload = function () {
+                if (request.status >= 200 && request.status < 400) {
+                    // Success!
+                    console.log(request.response);
+                    var response = JSON.parse(request.response);
+                    location.href = "/modoo/user/modooLiveStudio/" + response.results;
+                } else {
+                    console.log('Error: ' + response);
+                }
+            };
+
+            request.onerror = function () {
+                // There was a connection error of some sort
+            };
+        }
+
+        function removeLive() {
+            if (confirm('생성하신 라이브체널이 모두 종료 됩니다.')) {
+                console.log("AAAA");
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '/modoo/user/removeAllLive', true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.send();
+                xhr.onload = function () {
+                    if (xhr.status >= 200 && xhr.status < 400) {
+                        // Success!
+                        var result = xhr.responseText;
+                        console.log(result);
+                        alert("완료되었습니다.");
+                        window.location.reload();
+                    } else {
+                        console.log('1');
+                        console.log('Error: ' + xhr.responseText);
+                    }
+                };
+
+                xhr.onerror = function () {
+                    console.log('2');
+                    onsole.log('Error: ' + xhr.responseText);
+                };
+            }
+        }
+
+    </script>
+</body>
+
+</html>

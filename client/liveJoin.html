@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, height=device-height, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Live Join</title>
+
+    {{ HTML::style('/assets/css/common.css?v=20190118') }}
+
+    <style>
+        html,
+        body {
+            height: 100%;
+        }
+
+        .chat_join_wrap {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+        }
+
+        .chat_join_wrap h1 {
+            display: block;
+            max-width: 140px;
+            margin: 0 auto;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .chat_join_wrap .box_pos {
+            position: absolute;
+            width: 100%;
+            max-width: 290px;
+            top: 50%;
+            left: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+        }
+
+        .chat_room_option {
+            margin: 70px auto 50px;
+            font-size: 12px;
+        }
+
+        .chat_room_option .room_name {
+            display: block;
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .chat_room_option .room_name input {
+            width: 100%;
+            height: 46px;
+            padding: 0 38px 0px 0px;
+            font-size: 13px;
+            outline: none;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            border-bottom: 1px solid #ccc;
+            -webkit-box-shadow: none;
+            box-shadow: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            text-align: left;
+        }
+
+        .chat_room_option .room_name input.keypress {
+            border-bottom: 2px solid #000;
+            -webkit-transition: border .3s ease;
+            transition: border .3s ease;
+
+        }
+
+        .chat_room_join {
+            width: 100%;
+            padding: 14px;
+            border-radius: 7px;
+            background: #000;
+            color: #fff;
+            font-size: 12px;
+        }
+
+        .remove_value {
+            display: none;
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translateY(-50%);
+            transform: translateY(-50%);
+            right: 0;
+            border: none;
+            outline: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background: #c8c8c8;
+            width: 26px;
+            height: 26px;
+            border-radius: 50px;
+            color: #fff;
+            line-height: 0.2;
+        }
+
+        .remove_value.show {
+            display: block;
+        }
+
+        input[type=text]::-ms-clear {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat_join_wrap">
+        <div class="box_pos">
+            <h1 onClick="location.href=location.href;"><img src="/assets_new/img/modoo_logo.png" alt="모두의 트레이닝 채팅방 만들기">
+            </h1>
+            <input type="hidden" name="channel_id" id="channel_id" value="" />
+            <div class="chat_room_option">
+                <span class="room_name">
+                    <input type="text" placeholder="사용하실 대화명을 입력하세요." name="user_chatName" id="user_chatName" value=""
+                        maxlength="20" autofocus />
+                    <button class="remove_value" id="removeVal">ⅹ</button>
+                </span>
+            </div>
+            <button class="chat_room_join button" id="join-live">입장하기</button>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // storeLiveChannel
+        var data = {};
+        document.querySelector('#join-live').addEventListener('click', function () {
+            console.log(document.querySelector('#user_chatName').value);
+            if (document.querySelector('#user_chatName').value.trim() === '') {
+                alert('대화명을 입력하세요');
+                document.querySelector('#user_chatName').value = '';
+                return;
+            }
+
+            var form = document.createElement("form");
+            form.setAttribute("charset", "UTF-8");
+            form.setAttribute("method", "Post"); //Post 방식
+            form.setAttribute("action", "/modoo/liveChat/{{$room_id}}");//요청 보낼 주소
+
+            var hiddenField = document.createElement("input");
+            hiddenField.setAttribute("type", "hidden");
+            hiddenField.setAttribute("name", "username");
+            hiddenField.setAttribute("value", document.querySelector('#user_chatName').value);
+            form.appendChild(hiddenField);
+
+            //  hiddenField = document.createElement("input");
+            //  hiddenField.setAttribute("type", "hidden");
+            //  hiddenField.setAttribute("name", "mEmail");
+            //  hiddenField.setAttribute("value", mEmail);
+            //  form.appendChild(hiddenField);
+
+            document.body.appendChild(form);
+            form.submit();
+        })
+
+        // document.querySelector('#create-live').addEventListener('click', function(){
+        //     storeLiveChannel();
+        // });
+
+        var inputUserName = document.getElementById('user_chatName');
+        var removeVal = document.getElementById('removeVal');
+
+        inputUserName.addEventListener('keyup', function () {
+            this.classList.add('keypress');
+            removeVal.classList.add('show');
+            if (this.value == '') {
+                this.classList.remove('keypress');
+                removeVal.classList.remove('show');
+            }
+        });
+
+        removeVal.addEventListener('click', function () {
+            inputUserName.value = '';
+            inputUserName.classList.remove('keypress');
+            this.classList.remove('show');
+            inputUserName.focus();
+        })
+
+
+        function storeLiveChannel() {
+            data = {
+                'channel_id': document.querySelector('#channel_id').value,
+                'user_chatName': document.querySelector('#user_chatName').value,
+            }
+            // console.log(data);
+            // return;
+            var request = new XMLHttpRequest();
+            request.open('POST', '/modoo/user/storeLiveChannel', true);
+            request.setRequestHeader('Content-Type', 'application/json');
+            request.send(JSON.stringify(data));
+            request.onload = function () {
+                if (request.status >= 200 && request.status < 400) {
+                    // Success!
+                    console.log(request);
+                    // location.href = "/modoo/user/modooLiveStudio/"+result.
+                } else {
+                    console.log('Error: ' + response);
+                }
+            };
+
+            request.onerror = function () {
+                // There was a connection error of some sort
+            };
+        }
+
+    </script>
+</body>
+
+</html>

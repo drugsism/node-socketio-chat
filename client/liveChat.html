@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8, autoRotate:disabled" />
+    <meta name="viewport"
+        content="user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, width=device-width" />
+    <title>Live Chat</title>
+
+    {{ HTML::style('/assets/css/common.css?v=20190118') }}
+
+    <style>
+        * {
+            font-family: 'Nanum Square', '나눔스퀘어', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은고딕', '돋움', 'dotum', serif, 'Open Sans', Arial, sans-serif !important;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            background-color: #f8f8f8;
+            overflow: hidden;
+        }
+
+        .chat-box {
+            width: 100%;
+        }
+
+        .box-header {
+            display: table;
+            position: relative;
+            width: 100%;
+            height: 54px;
+            padding: 0 10px;
+            background-color: #fff;
+            -webkit-box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .box-header:after {
+            display: block;
+            position: absolute;
+            width: 100%;
+            height: 10px;
+            left: 0;
+            bottom: -10px;
+            right: 0;
+            background: #f8f8f8;
+            z-index: -10;
+            content: '';
+        }
+
+        .box-header .live_info {
+            display: table-cell;
+            vertical-align: middle;
+        }
+
+        .box-header .live_info {
+            /* width: calc(100% - 140px); */
+            font-size: 0;
+        }
+
+        .box-header .live_option {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            -webkit-transform: translateY(-50%);
+            transform: translateY(-50%);
+            /* width: 130px;
+            font-size: 0;
+            text-align: right; */
+        }
+
+        .box-header .live_info h1 {
+            display: block;
+            overflow: hidden;
+            max-width: 75%;
+            font-weight: bold;
+            font-size: 14px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .box-header .live_info span,
+        .box-header .live_info span label {
+            display: inline-block;
+            font-size: 10px;
+            color: #000;
+        }
+
+        .watch_user {
+            font-weight: bold;
+        }
+
+        .box-header .live_info span:first-of-type {
+            margin-right: 10px;
+            color: #888;
+        }
+
+        .box-header .live_option button {
+            width: 60px;
+            height: 30px;
+            border-radius: 7px;
+            border: 1px solid #888;
+            font-size: 11px;
+        }
+
+        .wrtc {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            font-size: 0;
+        }
+
+        .wrtc iframe {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            right: 0;
+            left: 0;
+            bottom: 0;
+            background: #000;
+            font-size: 0;
+            z-index: 910;
+
+        }
+
+        .end_overlay {
+            display: none;
+            visibility: hidden;
+        }
+
+        .end_overlay.on {
+            display: block;
+            visibility: visible;
+            -webkit-animation: fadeIn 1s;
+            animation: fadeIn 1s;
+            -webkit-animation-fill-mode: forwards;
+            animation-fill-mode: forwards;
+        }
+
+        .end_overlay.off {
+            display: block;
+            visibility: visible;
+        }
+
+        .overlay .desc {
+            display: block;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            -webkit-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .overlay .desc button {
+            display: block;
+            padding: 10px 14px;
+            margin: 40px auto 0;
+            border-radius: 7px;
+            border: 1px solid #ededed;
+            color: #fff;
+            font-size: 12px;
+        }
+
+        .box-body {
+            position: fixed;
+            top: 0px;
+            right: 0;
+            bottom: auto;
+            left: 0;
+            z-index: 100;
+        }
+
+        .box-footer {
+            position: fixed;
+            top: auto;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            height: 50px;
+            padding: 5px 10px;
+            border-top: 1px solid #f8f8f8;
+            -webkit-box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+            font-size: 0;
+            z-index: 400;
+        }
+
+        .box-footer .form-group {
+            height: 100%;
+        }
+
+        .box-footer .send_text {
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+            width: calc(100% - 40px);
+            height: 100%;
+            border-top: 1px solid #ebebeb;
+            border-bottom: 1px solid #ebebeb;
+            border-right: 0px;
+            border-left: 1px solid #ebebeb;
+            border-top-left-radius: 14px;
+            border-bottom-left-radius: 14px;
+            background-color: #f8f8f8;
+            vertical-align: text-bottom;
+            font-size: 12px;
+        }
+
+        .box-footer textarea {
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translateY(-50%);
+            transform: translateY(-50%);
+            left: 0;
+            right: 0;
+            /* bottom: 2px; */
+            width: calc(100% + 40px);
+            height: 20px;
+            padding-left: 8px;
+            padding-right: 40px;
+            border: 0px;
+            background: transparent;
+            line-height: 1.6;
+            font-size: 12px;
+            resize: none;
+            outline: none;
+        }
+
+        .box-footer .send_btn {
+            display: inline-block;
+            position: relative;
+            width: 40px;
+            height: 100%;
+            padding-top: 1px;
+            padding-right: 2px;
+            border-top: 1px solid #ebebeb;
+            border-bottom: 1px solid #ebebeb;
+            border-right: 1px solid #ebebeb;
+            border-left: 0px;
+            border-top-right-radius: 14px;
+            border-bottom-right-radius: 14px;
+            background-color: #f8f8f8;
+            vertical-align: text-bottom;
+            text-align: right;
+            z-index: 400;
+        }
+
+        .box-footer .send_btn button {
+            position: absolute;
+            right: 2px;
+            bottom: 3px;
+            width: 31px;
+            height: 31px;
+            border: 0px;
+            border-radius: 50%;
+            background-color: #FD5454;
+            color: #fff;
+            font-weight: bold;
+            vertical-align: middle;
+            cursor: pointer;
+        }
+
+        .chat-placeholder {
+            overflow-y: scroll;
+            width: calc(100% + 20px);
+            height: 100%;
+            padding: 10px;
+            padding-right: 30px;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            word-break: break-all;
+        }
+
+        .list_section {
+            position: absolute;
+            left: 0;
+            right: 0;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .chat_mine .chater span {
+            font-weight: bold;
+            color: #fb9390;
+        }
+
+        .chat_someone,
+        .chat_mine {
+            display: table;
+            padding-top: 6px;
+            padding-bottom: 8px;
+            text-align: left;
+        }
+
+        .message.my label,
+        .message.someone label {
+            display: inline-block;
+            width: 100%;
+            font-size: 12px;
+            word-break: break-all;
+            text-align: left;
+        }
+
+        .message.someone label {
+            color: #555;
+        }
+
+        .message.my label {
+            color: #fff;
+        }
+
+        .chater {
+            display: table-cell;
+            padding-right: 7px;
+            font-size: 0;
+            vertical-align: top;
+            white-space: nowrap;
+        }
+
+        .chater span {
+            color: #000;
+            font-size: 12px;
+        }
+
+        .message.my:after {
+            content: '';
+            position: absolute;
+            border-style: solid;
+            border-width: 3px 0 3px 5px;
+            border-color: transparent #fff59d;
+            display: block;
+            width: 0;
+            z-index: 1;
+            right: -5px;
+            top: 6px;
+            background-color: rgba(197, 206, 162, 0.4);
+        }
+
+        .message.my.empty:after {
+            display: none;
+        }
+
+        .message.someone,
+        .message.my {
+            display: table-cell;
+            padding: 5px 20px;
+            border-top-left-radius: 0;
+            border-top-right-radius: 15px;
+            border-bottom-right-radius: 15px;
+            border-bottom-left-radius: 15px;
+            background-color: #e5e9f0;
+            font-size: 0;
+            vertical-align: middle;
+        }
+
+        .message.my {
+            background: #fb9390;
+        }
+
+        .message.someone:after {}
+
+        .message.someone.empty:after {
+            display: none;
+        }
+
+        .system_message {
+            color: #000;
+            font-size: 12px;
+            padding-top: 10px;
+            padding-bottom: 8px;
+            margin-top: 8px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .system_message+.system_message {
+            padding-top: 0;
+        }
+
+        .system_message:last-of-type {
+            margin-bottom: 16px;
+        }
+
+        @-webkit-keyframes fadeIn {
+            0% {
+                opacity: 0;
+                z-index: 100;
+                display: block;
+            }
+
+            100% {
+                opacity: 1;
+                z-index: 100;
+            }
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                z-index: 100;
+            }
+
+            100% {
+                opacity: 1;
+                z-index: 100;
+            }
+        }
+
+        @media only screen and (orientation: landscape) and (min-width:390px) {
+            .box-header {
+                display: none;
+            }
+
+            .box-footer {
+                position: absolute;
+                width: 40%;
+                height: 50px;
+                bottom: 38px;
+                padding: 5px 10px;
+                border-top: none;
+                background: transparent;
+                -webkit-box-shadow: none;
+                box-shadow: none;
+            }
+
+            .box-footer .send_text {
+                width: calc(100% - 40px);
+                border: none;
+                border-right: 0;
+                background-color: rgba(0, 0, 0, .5);
+            }
+
+            .box-footer textarea {
+                color: #fff;
+            }
+
+            .box-footer .send_btn {
+                width: 40px;
+                border: none;
+                border-left: 0;
+                background-color: rgba(0, 0, 0, .5);
+            }
+
+            .list_section {
+                /* display: none; */
+                width: 40%;
+                height: auto !important;
+                top: 62px !important;
+                bottom: 90px;
+                z-index: 100;
+                /* background: #fff; */
+                overflow-x: hidden;
+            }
+
+            .chat-placeholder {
+                width: calc(100% + 20px);
+                padding-right: 30px;
+                padding-bottom: 0;
+                overflow-x: hidden;
+
+            }
+
+            .box-footer .send_btn button {
+                bottom: 5px;
+                right: 3px;
+                background-color: rgba(253, 84, 84, 0.75);
+            }
+
+            .chat_mine,
+            .chat_someone {
+                padding: 5px 10px;
+                border-radius: 7px;
+                background: rgba(255, 255, 255, 0.75);
+                width: auto;
+                /* max-width: 70%; */
+                margin-top: 12px;
+                margin-bottom: 12px;
+            }
+
+            .chat_mine .chater span {
+                color: #fff;
+                font-weight: 400;
+            }
+
+            .chat_someone .chater span {
+                font-weight: bold;
+                color: #000;
+            }
+
+            .message.my label,
+            .message.someone label {
+                color: #000;
+            }
+
+            .box-body {
+                height: 100%;
+            }
+
+            .wrtc {
+                height: 100%;
+                padding: 0;
+            }
+
+            .system_message {
+                color: #fff;
+                /* background: rgba(255,255,255,.4); */
+            }
+
+            .system_message label {
+                /* background: #fff; */
+                padding: 5px 24px;
+                border-radius: 7px;
+                opacity: 1;
+            }
+
+            .system_message+.system_message {
+                padding-top: 10px;
+                margin-top: 8px;
+            }
+
+            .chat-placeholder>div:last-of-type {
+                /* margin-bottom:0px; */
+            }
+
+            .message.someone {
+                padding: 0;
+                background: transparent;
+            }
+
+            .chat_mine {
+                /* display: table;
+                margin-left:auto;
+                text-align: left; */
+            }
+
+            .chat_mine .chater {
+                /* display: table-cell; */
+            }
+
+            .message.my {
+                display: table-cell;
+                background: transparent;
+                padding: 0;
+            }
+
+            .chat_mine {
+                background: rgba(251, 147, 144, 0.75);
+            }
+
+            .message.my label {
+                color: #fff;
+            }
+
+            .remove_value.show {
+                display: block;
+            }
+
+            input[type=text]::-ms-clear {
+                display: none;
+            }
+
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-box">
+        <div id="boxBody" class="box-body">
+            <div id="videoSection" class="wrtc">
+                <div id="player"></div>
+            </div>
+            <div id="infoSection" class="box-header">
+                <div class="live_info">
+                    <h1>{{$channelInfo["title"]}}</h1>
+                    <span>{{date('Y-m-d')}}</span>
+                    <span class="watch_user"><label class="lbUserCount">0</label>명 시청중</span>
+                </div>
+                <div class="live_option">
+                    <button class="button btnLeaveChannel" type="button">EXIT</button>
+                </div>
+            </div>
+        </div>
+        <div id="messageListSection" class="list_section">
+            <div class="chat-placeholder"></div>
+        </div>
+        <div class="box-footer" id="sendMessageSection">
+            <div class="form-group">
+                <div class="send_text" id="sendBox">
+                    <textarea id="chat-message" class="chat-message" warp="hard" name="chat-message" rows="1"
+                        placeholder="메시지를 입력하세요."></textarea>
+                </div>
+                <div class="send_btn">
+                    <button id="btnSend" class="btnSend" type="button">→</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="endOverlay" class="end_overlay overlay">
+        <span class="desc">
+            모두의 트레이닝<br />
+            라이브 방송이 종료되었습니다.
+            <button class="button btnLeaveChannel" type="button">나가기</button>
+        </span>
+    </div>
+
+</body>
+
+<script src="https://modootraining.co.kr/assets/js/core/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/@remotemonster/sdk/remon.min.js"></script> -->
+
+<script type="text/javascript">
+
+    var boxBody = document.getElementById('boxBody');
+    var videoSection = document.getElementById('videoSection');
+    var infoSection = document.getElementById('infoSection');
+    var messageListSection = document.getElementById('messageListSection');
+    var sendMessageSection = document.getElementById('sendMessageSection');
+    var sendBtn = document.getElementById('btnSend');
+    var chatTextarea = document.getElementById('chat-message');
+    var chatPlaceholder = document.getElementsByClassName('chat-placeholder')[0];
+    var endOverlay = document.getElementById('endOverlay');
+    var btnLeaveChannel = document.getElementsByClassName('btnLeaveChannel');
+
+    var sendBox = document.getElementById('sendBox');
+    var isConnected = false;
+    var orientation = window.orientation;
+    var num = 50;
+
+    // 리사이즈 이벤트
+    window.onresize = function (event) {
+        ListSectionSize();
+        orientation = window.orientation;
+
+        setTimeout(function () {
+            messageListSection.style.top = boxBody.clientHeight + 'px';
+        }, 300);
+
+        chatPlaceholder.scrollTop = chatPlaceholder.scrollHeight;
+        messageListSection.style.height = window.innerHeight - minusHeight + 'px';
+        onPlayerStateChange(event);
+
+        if (orientation != undefined) {
+            if (orientation == 0) {
+                $('#messageListSection').css({
+                    'top': $('#videoSection').outerHeight() + $('#infoSection').height(),
+                });
+                $('#boxBody').css({
+                    'position': 'fixed',
+                    'top': 0
+                });
+                $('body').css({
+                    'margin-top': 0
+                });
+            }
+        }
+    }
+
+    ListSectionSize();
+
+    var winHeight = $(window).height();
+    var minusHeight = $('#videoSection').outerHeight() + $('#infoSection').height() + $('#sendMessageSection').outerHeight()
+    var baseHeight = winHeight - minusHeight;
+    $('#chat-message').focusin(function () {
+        setTimeout(function () {
+
+            $('#messageListSection').css({
+                'top': $('#videoSection').outerHeight() + $('#infoSection').height() + $(window).scrollTop(),
+            });
+            $('#boxBody').css({
+                'position': 'absolute',
+                'top': $(window).scrollTop()
+            });
+            $('body').css({
+                'margin-top': $(window).scrollTop(),
+            });
+        }, 300);
+
+        $('#chat-message').focusout(function () {
+            $('#messageListSection').css({
+                'top': $('#videoSection').outerHeight() + $('#infoSection').height(),
+            });
+            $('#boxBody').css({
+                'position': 'fixed',
+                'top': 0
+            });
+            $('body').css({
+                'margin-top': 0
+            });
+        });
+    })
+
+    // 하단 메시지입력박스 클릭시 포커스
+    sendBox.addEventListener('click', function () {
+        chatTextarea.focus();
+    }, true);
+
+    // 쉬프트 + 엔터 줄바꿈처리
+    chatTextarea.addEventListener('keyup', function (event) {
+        var count = (chatTextarea.value.match(/\n/g) || []).length;
+
+        if (isMobile()) {
+            if (event.which == 13 && event.shiftKey || event.keyCode == 13 && event.shiftKey) {
+
+                event.preventDefault();
+
+                if (chatTextarea.value.trim() === '') {
+                    return;
+                }
+
+                // data.type = 'chat';
+                data.message = chatTextarea.value.trim();
+                method.sendMessage();
+                chatTextarea.value = '';
+                chatTextarea.style.height = 20 + 'px';
+                sendMessageSection.style.height = num + 'px';
+                count = 0;
+
+                if (orientation != undefined) {
+                    if (orientation == 0) {
+                    } else if (orientation == 90 || orientation == -90) {
+                        messageListSection.style.bottom = 90 + 'px'
+                    }
+                }
+
+            } else if (event.which == 13 || event.keyCode == 13) {
+                event.preventDefault();
+                if (orientation != undefined) {
+                    if (orientation == 0) {
+                    } else if (orientation == 90 || orientation == -90) {
+                        chatPlaceholder.scrollTop = chatPlaceholder.scrollHeight;
+                        if (count == 1) {
+
+                            messageListSection.style.bottom = 115 + 'px'
+                            chatPlaceholder.scrollTop = chatPlaceholder.scrollHeight;
+                        } else if (count >= 2) {
+
+                            messageListSection.style.bottom = 120 + 'px'
+                            chatPlaceholder.scrollTop = chatPlaceholder.scrollHeight;
+                        } else {
+                            messageListSection.style.bottom = 90 + 'px'
+                        }
+
+                    }
+                }
+
+            }
+        } else {
+            if (event.which == 13 && event.shiftKey || event.keyCode == 13 && event.shiftKey) {
+                event.preventDefault();
+            } else if (event.which == 13 || event.keyCode == 13) {
+
+                if (chatTextarea.value.trim() === '') {
+                    return;
+                }
+
+                // data.type = 'chat';
+                data.message = chatTextarea.value.trim();
+                method.sendMessage();
+                chatTextarea.value = '';
+                chatTextarea.style.height = 20 + 'px';
+                sendMessageSection.style.height = num + 'px';
+                count = 0;
+            }
+        }
+
+        if (count == 1) {
+            sendMessageSection.style.height = num + 20 + 'px';
+            chatTextarea.style.height = 40 + 'px';
+        } else if (count >= 2) {
+            sendMessageSection.style.height = num + 36 + 'px';
+            chatTextarea.style.height = 58 + 'px';
+        } else {
+            sendMessageSection.style.height = num + 'px';
+            chatTextarea.style.height = 20 + 'px';
+        }
+
+    });
+
+    // 전송버튼 이벤트
+    var sendBtnBox = document.getElementsByClassName('send_btn')[0];
+
+    sendBtnBox.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (chatTextarea.value.trim() === '') {
+            return;
+        }
+
+        // data.type = 'chat';
+        data.message = chatTextarea.value.trim();
+        method.sendMessage();
+        chatTextarea.value = '';
+        sendMessageSection.style.height = num + 'px';
+        chatTextarea.style.height = 20 + 'px';
+    }, true);
+
+    // 나가기 버튼 이벤트
+    var chatExit = {
+        handleEvent: function () {
+            if (confirm("라이브 채널에서 나가시겠습니까?\r\n확인 버튼을 클릭하면 창이 닫힙니다.")) {
+                if (socket) {
+
+                    socket.emit('leaveChannel', { channel: '{{$room_id}}', username: '{{$username}}' });
+                    socket.disconnect();
+                    window.open('', '_self', '');
+                    window.close();
+                }
+            }
+        }
+    }
+
+    for (var i = 0; i < btnLeaveChannel.length; i++) {
+        if (window.attachEvent) {
+            btnLeaveChannel[i].attachEvent('click', chatExit.handleEvent);
+        } else {
+            btnLeaveChannel[i].addEventListener('click', chatExit.handleEvent, false);
+        }
+    }
+
+    // 메시지 리스트, 높이 설정
+    function ListSectionSize() {
+        minusHeight = videoSection.clientHeight + infoSection.clientHeight + sendMessageSection.clientHeight;
+        messageListSection.style.height = window.innerHeight - minusHeight + 'px';
+        messageListSection.style.top = boxBody.clientHeight + 'px';
+    }
+
+    // youtube api
+    var tag = document.createElement('script');
+    tag.src = "//www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    var player;
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            height: '360',
+            width: '640',
+            videoId: '{{$channelInfo["content_link"]}}',
+            host: 'https://www.youtube-nocookie.com',
+            playerVars: {
+                autoplay: 1,
+                playsinline: 1,
+            },
+            events: {
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange
+            }
+        });
+    }
+
+    function onPlayerReady(event) {
+        event.target.playVideo();
+        sendMessageSection.style.display = 'block';
+        // player.mute();
+    }
+
+    var done = false;
+
+    function onPlayerStateChange(event) {
+        if (orientation != undefined) {
+
+            if (event.data == YT.PlayerState.PLAYING && !done) {
+                endOverlay.classList.remove('on');
+                done = true;
+            }
+
+            if (orientation == 0) {
+                sendMessageSection.style.display = 'block';
+            } else if (orientation == 90 || orientation == -90) {
+                if (event.data == YT.PlayerState.PAUSED) {
+                    sendMessageSection.style.display = 'none';
+                } else if (event.data == YT.PlayerState.PLAYING) {
+                    sendMessageSection.style.display = 'block';
+                }
+            }
+
+            if (event.data == YT.PlayerState.ENDED) {
+                endOverlay.classList.add('on');
+            }
+
+        }
+    }
+
+    // var config = {
+    //   credential: {
+    //     key: '546b45e18f2d040037a52d3c8c2005c9512421f1d1879dc5',
+    //     serviceId: 'drugsism@gmail.com',
+    //     id: 'test'
+    //   },
+    // };
+
+    // if(true) {
+    //     Object.assign(config, {view:{local: '#localVideo'}});
+    // } else {
+    //     Object.assign(config, {view:{remote: '#remoteVideo'}});   
+    // }
+
+    // var listener = {
+    //   onCreate(chid) { console.log(`EVENT FIRED: onCreate: ${chid}`); },
+    //   onJoin(chid) { console.log(`EVENT FIRED: onJoin: ${chid}`); },
+    //   onClose() { console.log('EVENT FIRED: onClose'); },
+    //   onError(error) { console.log(`EVENT FIRED: onError: ${error}`); },
+    //   onStat(result) { console.log(`EVENT FIRED: onStat: ${result}`); }
+    // };
+
+    // var remon = new Remon({ config, listener });
+
+    $(function () {
+        @if ($channelInfo['open_yn'] == 'E')
+            //  라이브 종료
+            endOverlay.classList.add('off');
+        player.stopVideo();
+        @endif
+        userChannel();
+
+        if (/Android/i.test(navigator.userAgent)) {
+            $(".btnLeaveChannel").hide();
+        }
+
+    });
+
+    function userChannel() {
+        data.type = 'join';
+        data.message = '{{$username}}님이 입장하셨습니다.'
+        method.sendMessage();
+        data.type = 'message';
+    }
+
+    function leaveChannel() {
+        socket.emit('leaveChannel', { channel: '{{$room_id}}', username: '{{$username}}' });
+    }
+
+
+    window.onbeforeunload = function () {
+        socket.emit('leaveChannel', { channel: '{{$room_id}}', username: '{{$username}}' });
+    }
+
+    @if (env("APP_ENV") == 'local')
+        var ws_url = 'https://modootraining.co.kr:6262/chat';
+    var socket = io.connect(ws_url, { secure: true, upgrade: false });
+    // var socket = io.connect(ws_url, {secure:true, transports: ['websocket']});
+    @else
+    var ws_url = '192.168.0.123:6262/chat';
+    var socket = io.connect(ws_url, { upgrade: false });
+    // var socket = io.connect(ws_url, {transports: ['websocket'], upgrade: false});
+    @endif
+
+    // socket.emit('join', '{{$room_id}}');
+    // socket.emit('getUserCount', '{{$room_id}}');
+
+    socket.on('liveUserEnd', function () {
+        // console.log("ended");
+        endOverlay.classList.add('on');
+        player.stopVideo();
+    })
+
+    socket.on('disconnect', function (userName) {
+        socket.emit('leaveChannel', { channel: '{{$room_id}}', username: '{{$username}}' });
+    })
+
+    socket.on('debug', function (data) {
+        // console.log(data);
+    })
+
+    socket.on('userCountUpdate', function (userCount) {
+        // console.log('user count:', userCount );
+        $(".lbUserCount").text(userCount);
+    })
+
+    // socket.on("reconnect", function(nr, socket) {
+    // });
+
+
+    socket.on('update_message', function (message) {
+        var chat_message = message;
+        var message_template = '';
+        var continue_chat = false;
+        var body_content = chat_message.body;
+        body_content = body_content.replace(/\n/g, "<br/>");
+        if (chat_message.type === 'join') {
+            if (chat_message.key !== '{{$key}}') {
+                message_template = '<p class="system_message"><label> ' + body_content + '</label></p>';
+            }
+            // message_template = '<p class="system_message"><label> '+body_content+'</label></p>';
+        } else if (chat_message.type === 'disconnect') {
+            message_template = '<p class="system_message"><label> ' + body_content + '</label></p>';
+        } else {
+            var chater;
+            if (document.querySelector('.chater')) {
+                chater = document.querySelectorAll('.chater')[document.querySelectorAll('.chater').length - 1].textContent;
+            }
+
+            if (chat_message.key === '{{$key}}') {
+                message_template += '<div class="chat_mine">\r\n';
+                message_template += '    <p class="chater"><span>' + chat_message.name + '</span></p>\r\n';
+                message_template += '   <span class="message my"><label>' + body_content + '</label></span>\r\n';
+                message_template += '</div>\r\n';
+
+            } else {
+                message_template += '<div class="chat_someone">\r\n';
+                // if(chat_message.role === 'owner') {
+                //     message_template += ' (코치) ';
+                // }
+                message_template += '    <p class="chater"><span>' + chat_message.name + '</span></p>\r\n';
+                message_template += '   <span class="message someone"><label>' + body_content + '</label></span>\r\n';
+                message_template += '</div>\r\n';
+            }
+        }
+
+        chatPlaceholder.insertAdjacentHTML('beforeend', message_template);
+        chatPlaceholder.scrollTop = chatPlaceholder.scrollHeight;
+
+    });
+
+    var data = {
+        messages: [],
+        message: '',
+        name: '{{$username}}',
+        redisChannel: 'chat_message',
+        channel: '',
+        type: 'message',
+        role: 'quest',
+        key: '{{$key}}'
+    };
+
+    data.channel = '{{$room_id}}' || '';
+    // var socket = {
+    //     connect: function() {
+    //         console.log('Socket connected');
+    //     },
+    //     // message: method.getMessage()
+    // };
+    var message_data = {};
+    var method = {
+        sendMessage: function () {
+            message_data = {
+                'name': data.name,
+                'body': data.message,
+                'channel': data.channel,
+                'type': data.type,
+                'role': data.role,
+                'key': data.key
+            }
+
+            var request = new XMLHttpRequest();
+            request.open('POST', '/modoo/user/chat/sendMessage', true);
+            request.setRequestHeader('Content-Type', 'application/json');
+            request.send(JSON.stringify(message_data));
+            request.onload = function () {
+                if (request.status >= 200 && request.status < 400) {
+                    // Success!
+                    var result = request.responseText;
+                    @if (env("APP_ENV") == 'local')
+                        var socket = io.connect('https://modootraining.co.kr:6262/chat', { secure: true, transports: ['websocket'], upgrade: false });
+                    @else
+                    var socket = io.connect('192.168.0.123:6262/chat', { transports: ['websocket'], upgrade: false });
+                @endif
+
+                socket.emit('send_message', message_data);
+                data.messages.push(data.message)
+                data.message = '';
+
+            } else {
+                console.log('Error: ' + result);
+            }
+    };
+
+    request.onerror = function () {
+        // There was a connection error of some sort
+    };
+        },
+    getMessage: function () {
+        $.ajax({
+            type: 'get',
+            dataType: 'json',
+            url: '/modoo/user/chat/getMessage',
+            success: function (result) {
+                // console.log(result);
+                data.messages = result.data;
+            },
+            error: function (result) {
+                console.log('Error: ' + result);
+            }
+        })
+    }
+    };
+
+    function isMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+</script>
+
+</html>

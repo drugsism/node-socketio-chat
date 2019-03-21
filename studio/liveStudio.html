@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, height=device-height, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Live Studio</title>
+
+    {{ HTML::style('/assets/css/common.css?v=20190118') }}
+
+    <style>
+        * {
+            font-family: 'Nanum Square', '나눔스퀘어', 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은고딕', '돋움', 'dotum', serif, 'Open Sans', Arial, sans-serif !important;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            background-color: #f8f8f8;
+            overflow: hidden;
+        }
+
+        .chat-box {
+            width: 100%;
+        }
+
+        .box-header {
+            position: relative;
+            width: 100%;
+            background-color: #fff;
+            -webkit-box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            line-height: 1.4;
+        }
+
+        .box-header .live_info {
+            max-width: 80%;
+            padding: 20px;
+            font-size: 0;
+        }
+
+        .box-header .live_option {
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translateY(-50%);
+            transform: translateY(-50%);
+            right: 20px;
+            bottom: auto;
+            left: auto;
+            font-size: 0;
+            text-align: right;
+        }
+
+        .box-header .live_info h1 {
+            display: block;
+            overflow: hidden;
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 40px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .box-header .live_info span,
+        .box-header .live_info span label {
+            display: inline-block;
+            font-size: 32px;
+            color: #000;
+        }
+
+        .box-header .live_info span:first-of-type {
+            margin-right: 20px;
+            color: #888;
+        }
+
+        .box-header .live_info span:last-of-type,
+        .box-header .live_info span label {
+            color: #fd5454;
+        }
+
+        .box-header .live_option button {
+            width: 80px;
+            height: 40px;
+            border-radius: 7px;
+            border: 1px solid #888;
+            font-size: 14px;
+        }
+
+        .box-header .live_info .lbLinkUrl,
+        .box-header .live_info .lbLinkUrl .linkToLive {
+            font-size: 15px;
+            color: #000;
+            vertical-align: text-top;
+        }
+
+
+        .list_section {
+            width: 100%;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .box-footer {
+            position: fixed;
+            top: auto;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            height: 80px;
+            padding: 10px 20px;
+            border-top: 1px solid #f8f8f8;
+            -webkit-box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+            font-size: 0;
+            z-index: 200;
+        }
+
+        .box-footer .form-group {
+            height: 100%;
+        }
+
+        .box-footer .send_text {
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+            width: calc(100% - 70px);
+            height: 100%;
+            border-top: 1px solid #ebebeb;
+            border-bottom: 1px solid #ebebeb;
+            border-right: 0px;
+            border-left: 1px solid #ebebeb;
+            border-top-left-radius: 14px;
+            border-bottom-left-radius: 14px;
+            background-color: #f8f8f8;
+            vertical-align: text-bottom;
+            font-size: 38px;
+        }
+
+        .box-footer textarea {
+            position: absolute;
+            top: 50%;
+            -webkit-transform: translateY(-50%);
+            transform: translateY(-50%);
+            left: 0;
+            right: 0;
+            width: calc(100% + 30px);
+            height: 50px;
+            padding-left: 10px;
+            border: 0px;
+            background: transparent;
+            line-height: 1.4;
+            font-size: 38px;
+            resize: none;
+            outline: none;
+        }
+
+        .box-footer .send_btn {
+            display: inline-block;
+            position: relative;
+            width: 70px;
+            height: 100%;
+            border-top: 1px solid #ebebeb;
+            border-bottom: 1px solid #ebebeb;
+            border-right: 1px solid #ebebeb;
+            border-left: 0px;
+            border-top-right-radius: 14px;
+            border-bottom-right-radius: 14px;
+            background-color: #f8f8f8;
+            vertical-align: text-bottom;
+            text-align: right;
+        }
+
+        .box-footer .send_btn button {
+            position: absolute;
+            right: 4px;
+            bottom: 4px;
+            left: auto;
+            width: 50px;
+            height: 50px;
+            border: 0px;
+            border-radius: 50%;
+            background-color: #FD5454;
+            color: #fff;
+            font-weight: bold;
+            font-size: 28px;
+            vertical-align: middle;
+            cursor: pointer;
+        }
+
+        .chat-placeholder {
+            overflow-y: scroll;
+            width: calc(100% + 40px);
+            height: 100%;
+            padding-right: 30px;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            word-break: break-all;
+        }
+
+
+        .chat_mine,
+        .chat_someone {
+            display: table;
+            max-width: 85%;
+            margin: 20px 0;
+        }
+
+        .chat_mine {
+            margin-left: auto;
+        }
+
+        .chat_someone {
+            margin-right: auto;
+        }
+
+        .message.my,
+        .message.someone {
+            display: table-cell;
+            padding: 14px 30px;
+        }
+
+        .message.my {
+            border-top-left-radius: 25px;
+            border-top-right-radius: 0px;
+            border-bottom-right-radius: 25px;
+            border-bottom-left-radius: 25px;
+            background-color: #4d94ff;
+            font-size: 0;
+            vertical-align: middle;
+        }
+
+        .message.someone {
+            border-top-left-radius: 0;
+            border-top-right-radius: 25px;
+            border-bottom-right-radius: 25px;
+            border-bottom-left-radius: 25px;
+            background-color: #e5e9f0;
+            font-size: 0;
+            vertical-align: middle;
+        }
+
+        .chater {
+            margin-right: 20px;
+            white-space: nowrap;
+        }
+
+        .chat_mine .chater {
+            display: none;
+        }
+
+        .chater span {
+            color: #000;
+            font-weight: bold;
+            font-size: 38px;
+        }
+
+        .message.my label,
+        .message.someone label {
+            display: inline-block;
+            width: 100%;
+            font-size: 38px;
+            word-break: break-all;
+            line-height: 1.4;
+        }
+
+        .message.someone label {
+            color: #555;
+        }
+
+        .message.my label {
+            color: #fff;
+        }
+
+        .system_message {
+            color: #757575;
+            font-size: 38px;
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .lbLinkUrl span {
+            margin-left: 4px;
+        }
+
+        .lbLinkUrl {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-box">
+        <div id="boxBody" class="box-body">
+            <div id="infoSection" class="box-header">
+                <div class="live_info">
+                    <h1>{{@$title}}</h1>
+                    <span>{{date("Y-m-d")}}</span>
+                    <span><label class="lbUserCount">0</label>명 시청중</span>
+                    <div class="lbLinkUrl">사용자 링크: <span id="linkToLive"
+                            class="linkToLive">https://modootraining.co.kr/modoo/liveJoin/{{$channel_value}}</span>
+                    </div>
+                </div>
+                <div class="live_option">
+                    <button class="button" id="btnLeaveChannel" type="button">방송종료</button>
+                </div>
+            </div>
+        </div>
+        <div id="messageListSection" class="list_section">
+            <div class="chat-placeholder"></div>
+        </div>
+        <div class="box-footer" id="sendMessageSection">
+            <div class="form-group">
+                <div class="send_text">
+                    <textarea id="chat-message" class="chat-message" warp="hard" name="chat-message" rows="1"
+                        placeholder="메시지를 입력하세요."></textarea>
+                </div>
+                <div class="send_btn">
+                    <button id="btnSend" class="btnSend" type="button">→</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+<script src="https://modootraining.co.kr/assets/js/core/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
+<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/@remotemonster/sdk/remon.min.js"></script> -->
+
+<script type="text/javascript">
+
+    var boxBody = document.getElementById('boxBody');
+    var messageListSection = document.getElementById('messageListSection');
+    var sendMessageSection = document.getElementById('sendMessageSection');
+    var sendBtn = document.getElementById('btnSend');
+    var chatTextarea = document.getElementById('chat-message');
+    var chatPlaceholder = document.getElementsByClassName('chat-placeholder')[0];
+    var channelBtnEl = document.querySelector('#channelBtn');
+    var btnLeaveChannel = document.getElementById('btnLeaveChannel');
+    var isConnected = false;
+    var orientation = window.orientation;
+    var num = 80;
+
+    // 리사이즈 이벤트
+    window.onresize = function () {
+        ListSectionSize();
+        orientation = window.orientation;
+        chatPlaceholder.scrollTop = chatPlaceholder.scrollHeight;
+    }
+
+    ListSectionSize();
+
+    // 텍스트 키이벤트 & 텍스트 박스 높이 설정
+    chatTextarea.addEventListener('keyup', function (event) {
+        var count = (chatTextarea.value.match(/\n/g) || []).length;
+
+        if (event.which == 13 && event.shiftKey || event.keyCode == 13 && event.shiftKey) {
+            event.preventDefault();
+
+        } else if (event.which == 13 || event.keyCode == 13) {
+            if (chatTextarea.value.trim() === '') {
+                return;
+            }
+
+            // data.type = 'chat';
+            data.message = chatTextarea.value.trim();
+            method.sendMessage();
+            chatTextarea.value = '';
+            chatTextarea.style.height = 'auto';
+            sendMessageSection.style.height = num + 'px';
+            count = 0;
+        }
+
+        if (count == 1) {
+            sendMessageSection.style.height = num + 58 + 'px';
+            chatTextarea.style.height = num + 20 + 'px';
+        } else if (count >= 2) {
+            sendMessageSection.style.height = num + 96 + 'px';
+            chatTextarea.style.height = num + 70 + 'px';
+        } else {
+            sendMessageSection.style.height = num + 'px';
+            chatTextarea.style.height = 50 + 'px';
+        }
+    })
+
+    // 메시지 전송 버튼 이벤트
+    sendBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+
+        if (chatTextarea.value.trim() === '') {
+            return;
+        }
+
+        // data.type = 'chat';
+        data.message = chatTextarea.value.trim();
+        method.sendMessage();
+        chatTextarea.value = '';
+        sendMessageSection.style.height = num + 'px';
+        chatTextarea.style.height = 'auto';
+    })
+
+    // 나가기 버튼 이벤트
+    var chatExit = {
+        handleEvent: function () {
+            if (confirm("라이브 채널을 종료 하시겠습니까?")) {
+                if (socket) {
+                    $.ajax({
+                        type: 'post',
+                        dataType: 'json',
+                        url: '/modoo/user/removeChannel',
+                        data: { 'show_id': '{{$channel_value}}' },
+                        success: function (result) {
+                            // console.log(result);
+                            socket.emit('liveEnd', { channel: '{{$channel_value}}' });
+                            alert("라이브가 종료되었습니다.");
+                            window.location.href = "/modoo/user/modooLiveCreate";
+                        },
+                        error: function (result) {
+                            console.log('Error: ' + result);
+                        }
+                    });
+
+                    // socket.disconnect();
+                    // TODO: 웹뷰 닫기
+                }
+            }
+        }
+    }
+
+    if (window.attachEvent) {
+        btnLeaveChannel.attachEvent('click', chatExit.handleEvent);
+    } else {
+        btnLeaveChannel.addEventListener('click', chatExit.handleEvent, false);
+    }
+
+    // 메시지 리스트, 높이 설정
+    function ListSectionSize() {
+        var minusHeight = boxBody.clientHeight + sendMessageSection.clientHeight;
+        messageListSection.style.height = window.innerHeight - minusHeight + 'px';
+        messageListSection.style.top = boxBody.clientHeight + 'px';
+    }
+
+
+    // var config = {
+    //   credential: {
+    //     key: '546b45e18f2d040037a52d3c8c2005c9512421f1d1879dc5',
+    //     serviceId: 'drugsism@gmail.com',
+    //     id: 'test'
+    //   },
+    // };
+
+    // if(true) {
+    //     Object.assign(config, {view:{local: '#localVideo'}});
+    // } else {
+    //     Object.assign(config, {view:{remote: '#remoteVideo'}});   
+    // }
+
+    // var listener = {
+    //   onCreate(chid) { console.log(`EVENT FIRED: onCreate: ${chid}`); },
+    //   onJoin(chid) { console.log(`EVENT FIRED: onJoin: ${chid}`); },
+    //   onClose() { console.log('EVENT FIRED: onClose'); },
+    //   onError(error) { console.log(`EVENT FIRED: onError: ${error}`); },
+    //   onStat(result) { console.log(`EVENT FIRED: onStat: ${result}`); }
+    // };
+
+
+    // var remon = new Remon({ config, listener });
+
+    // function start() {
+    //   if (isConnected) {
+    //     isConnected = false;
+    //     channelBtnEl.textContent = 'CREATE';
+
+    // console.log(remon);
+    //     remon.close();
+    //   } else {
+    //     isConnected = true;
+    //     channelBtnEl.textContent = 'CLOSE';
+    //     remon.createCast();
+    //   }
+    // }
+
+    // channelBtnEl.addEventListener('click', (evt) => {
+    //   start();
+    //   evt.preventDefault();
+    // }, false);
+
+    $(function () {
+        userChannel();
+    });
+
+    function userChannel() {
+        data.type = 'join';
+        data.message = '{{$user->username}}님이 입장하셨습니다.'
+        method.sendMessage();
+        data.type = 'message';
+    }
+
+    function leaveChannel() {
+        socket.emit('leaveChannel', { channel: '{{$channel_value}}', username: '{{$user->username}}' });
+    }
+
+
+    window.onbeforeunload = function () {
+        socket.emit('leaveChannel', { channel: '{{$channel_value}}', username: '{{$user->username}}' });
+    }
+
+
+    @if (env("APP_ENV") == 'local')
+        var ws_url = 'https://modootraining.co.kr:6262/chat';
+    var socket = io.connect(ws_url, { secure: true, upgrade: false });
+    @else
+    var ws_url = '192.168.0.123:6262/chat';
+    var socket = io.connect(ws_url, { upgrade: false });
+    @endif
+
+    socket.emit('createLive', '{{$channel_value}}');
+
+    socket.on('disconnect', function (userName) {
+        socket.emit('leaveChannel', { channel: '{{$channel_value}}', username: '{{$user->username}}' });
+    })
+
+    socket.on('userCountUpdate', function (userCount) {
+        $(".lbUserCount").text(userCount);
+    })
+
+
+
+    socket.on('update_message', function (message) {
+        var chat_message = message;
+        var message_template = '';
+        console.log("received message:", chat_message);
+
+        var continue_chat = false;
+        var body_content = chat_message.body;
+        body_content = body_content.replace(/\n/g, "<br/>");
+        if (chat_message.type === 'join') {
+            message_template = '<p class="system_message"><label> ' + body_content + '</label></p>';
+            // message_template = '<p class="system_message"><label> '+body_content+'</label></p>';
+        } else if (chat_message.type === 'disconnect') {
+            message_template = '<p class="system_message"><label> ' + body_content + '</label></p>';
+        } else {
+            var chater;
+            if (document.querySelector('.chater')) {
+                chater = document.querySelectorAll('.chater')[document.querySelectorAll('.chater').length - 1].textContent;
+            }
+
+            if (chat_message.key === '{{$key}}') {
+                message_template += '<div class="chat_mine">\r\n';
+                message_template += '    <p class="chater"><span>' + chat_message.name + '</span></p>\r\n';
+                message_template += '   <span class="message my"><label>' + body_content + '</label></span>\r\n';
+                message_template += '</div>\r\n';
+
+            } else {
+                message_template += '<div class="chat_someone">\r\n';
+                message_template += '    <p class="chater"><span>' + chat_message.name + '</span></p>\r\n';
+                message_template += '   <span class="message someone"><label>' + body_content + '</label></span>\r\n';
+                message_template += '</div>\r\n';
+            }
+        }
+
+        document.querySelector('.chat-placeholder').insertAdjacentHTML('beforeend', message_template);
+        chatPlaceholder.scrollTop = chatPlaceholder.scrollHeight;
+    });
+
+
+    var data = {
+        messages: [],
+        message: '',
+        name: '{{$user->username}}',
+        redisChannel: 'chat_message',
+        channel: '',
+        type: 'message',
+        role: 'owner',
+        key: '{{$key}}'
+    };
+
+    data.channel = '{{$channel_value}}' || '';
+    // var socket = {
+    //     connect: function() {
+    //         console.log('Socket connected');
+    //     },
+    //     // message: method.getMessage()
+    // };
+
+    var message_data = {};
+    var method = {
+        sendMessage: function () {
+            message_data = {
+                'name': data.name,
+                'body': data.message,
+                'channel': data.channel,
+                'type': data.type,
+                'role': data.role,
+                'key': data.key
+            }
+
+            var request = new XMLHttpRequest();
+            request.open('POST', '/modoo/user/chat/sendMessage', true);
+            request.setRequestHeader('Content-Type', 'application/json');
+            request.send(JSON.stringify(message_data));
+            request.onload = function () {
+                if (request.status >= 200 && request.status < 400) {
+                    // Success!
+                    var result = request.responseText;
+                    @if (env("APP_ENV") == 'local')
+                        var socket = io.connect('https://modootraining.co.kr:6262/chat', { secure: true, transports: ['websocket'], upgrade: false });
+                    @else
+                    var socket = io.connect('192.168.0.123:6262/chat', { transports: ['websocket'], upgrade: false });
+                @endif
+                // console.log('send message:', result);
+
+                socket.emit('send_message', message_data);
+                data.messages.push(data.message)
+                data.message = '';
+
+            } else {
+                console.log('Error: ' + result);
+            }
+    };
+
+    request.onerror = function () {
+        // There was a connection error of some sort
+    };
+        },
+    getMessage: function () {
+        $.ajax({
+            type: 'get',
+            dataType: 'json',
+            url: '/modoo/user/chat/getMessage',
+            success: function (result) {
+                console.log(result);
+                data.messages = result.data;
+            },
+            error: function (result) {
+                console.log('Error: ' + result);
+            }
+        })
+    }
+    };
+
+
+
+    function isMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+</script>
+
+</html>
