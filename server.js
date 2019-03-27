@@ -19,11 +19,7 @@ let server;
 if (process.env.APP_ENV === "dev") {
   var options = {
     pingInterval: 10000,
-    pingTimeout: 60000,
-    reconnection: true,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000,
-    reconnectionAttempts: 99999
+    pingTimeout: 60000
   };
   server = http.createServer(options, app).listen(app.get("port"), () => {
     console.log("listening for Livechat port:", app.get("port"));
@@ -40,11 +36,7 @@ if (process.env.APP_ENV === "dev") {
       .readFileSync(path.resolve("/etc/apache2/cert/modootraining.co.kr.crt"))
       .toString(),
     pingInterval: 10000,
-    pingTimeout: 60000,
-    reconnection: true,
-    reconnectionDelay: 1000,
-    reconnectionDelayMax: 5000,
-    reconnectionAttempts: 99999
+    pingTimeout: 60000
   };
   server = https.createServer(options, app).listen(app.get("port"), () => {
     console.log("listening for Livechat port:", app.get("port"));
